@@ -22,15 +22,28 @@ class SphinxService
         $this->connection = new PdoConnection($pdo);
     }
 
-    public function search($query)
+    public function getCount($query)
     {
         $sphinx = new SphinxQL($this->connection);
 
-        return $sphinx
-            ->select('*')
-            ->from('distributed_posts_index')
-            ->match('title, description, tags', $query) // Searches all fields
-            ->execute();
+        return $sphinx->query(
+            "SELECT id FROM distributed_posts_index WHERE MATCH('{$query}')"
+        )->execute()->count();
+    }
+
+    public function search($query, $page = 1, $limit = 10)
+    {
+        $sphinx = new SphinxQL($this->connection);
+        $offset = ($page - 1) * $limit;
+
+        $results = $sphinx->query(
+            "SELECT * FROM distributed_posts_index WHERE MATCH('{$query}') LIMIT {$offset}, {$limit}"
+        )->execute()->fetchAllAssoc();
+
+        return collect($results)->map(function ($result) {
+            $result['tags'] = explode(',', $result['tags']);
+            return $result;
+        });
     }
 }
 

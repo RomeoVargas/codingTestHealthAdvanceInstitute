@@ -53,6 +53,11 @@ class PostRepository extends CUDRepository implements PostRepositoryInterface
     public function deleteById(int $id)
     {
         DB::connection($this->shard)
+            ->table('post_tags')
+            ->where('post_id', $id)
+            ->delete();
+
+        DB::connection($this->shard)
             ->table($this->model->getTable())
             ->where('id', $id)
             ->delete();

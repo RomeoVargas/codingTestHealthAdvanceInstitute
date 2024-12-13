@@ -14,8 +14,9 @@ export default {
             name: 'Romz',
             searchKey: '',
             posts: {
-                currentPage: 0,
-                totalCount: 0,
+                page: 1,
+                perPage: 10,
+                count: 0,
                 data: []
             },
             postFormData: {
@@ -67,19 +68,22 @@ export default {
                 alert(response.data.message);
             });
         },
-        reloadPosts() {
+        reloadPosts(page) {
             let me = this,
                 loader = me.$loading.show({
                     container: null
                 });
 
-            axios.get('/posts?search=' + me.searchKey).then((response) => {
+            axios.get(
+                `/posts?search=${me.searchKey}&page=${page || 1}&perPage=${me.posts.perPage}`
+            ).then((response) => {
                 const responseData = response.data;
 
                 loader.hide();
                 me.posts = {
-                    currentPage: 1,
-                    totalCount: responseData.total || 0,
+                    ...me.posts,
+                    page: 1,
+                    count: responseData.total || 0,
                     data: responseData.records || []
                 }
             }).catch((reason) => {
@@ -119,7 +123,12 @@ export default {
                 </div>
             </div>
             <PostsTable @edit="editPost" @delete="confirmDeletePost" :posts="posts.data" />
-<!--            <Pagination v-if="posts.totalCount > 0" :current-page="posts.currentPage" :total-count="posts.totalCount" />-->
+            <Pagination v-if="posts.count > 0"
+                @pageChange="reloadPosts"
+                :current-page="posts.page"
+                :total-count="posts.count"
+                :num-per-page="posts.perPage"
+            />
         </div>
 
         <PostModal @postSubmitted="reloadPosts" :post-form-data="postFormData"/>

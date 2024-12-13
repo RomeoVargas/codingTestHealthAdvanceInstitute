@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\v1;
 use App\Http\Controllers\Controller;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\TagRepositoryInterface;
+use App\Services\SphinxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -25,15 +26,32 @@ class PostController extends Controller
 
     public function index(Request $request)
     {
-        $posts = $this->postRepository->getAll();
-        Cache::put('posts', $posts);
+        $sphinxService = new SphinxService();
+        $page = $request->get('page', 1);
+        $limit = $request->get('perPage', 10);
+        $keyword = $request->get('keyword');
 
-        // For some reason it doesn't get to index any record so this won't be added for now
-        // $sphinxPosts = app(SphinxService::class)->search($request->get('search'));
+        $cacheRecordsKeyword = "posts:data{$keyword}_{$page}_$limit";
+        $cacheCountKeyword = "posts:count{$keyword}_{$page}_$limit";
+        if (!Cache::has($cacheRecordsKeyword) || !Cache::has($cacheCountKeyword)) {
+            Cache::put(
+                $cacheRecordsKeyword,
+                $sphinxService->search(
+                    $keyword,
+                    $request->get('page', 1),
+                    $request->get('perPage', 10)
+                )
+            );
 
-        // This is not paginated anymore due to lack of time
+            Cache::put(
+                $cacheCountKeyword,
+                $sphinxService->getCount($keyword)
+            );
+        }
+
         return response()->json([
-            'records' => $posts
+            'records' => Cache::get($cacheRecordsKeyword),
+            'total' => (int) Cache::get($cacheCountKeyword)
         ]);
     }
 
@@ -47,8 +65,7 @@ class PostController extends Controller
                 $tags = $this->tagRepository->findOrCreateMany($tags);
                 $post->tags()->sync($tags);
             }
-            // New entry is added so cache needs to be reset
-            Cache::delete('posts');
+            Cache::clear();
 
             return response()->json([
                 'post' => $post,
@@ -69,10 +86,7 @@ class PostController extends Controller
             $this->postRepository
                 ->setShardByUserId($userId)
                 ->deleteById($postId);
-
-
-            // An entry is deleted so cache needs to be reset
-            Cache::delete('posts');
+            Cache::clear();
 
             return response()->json([
                 'message' => 'Post deleted successfully.',
@@ -99,9 +113,7 @@ class PostController extends Controller
                 $tags = $this->tagRepository->findOrCreateMany($tags);
                 $post->tags()->sync($tags);
             }
-
-            // An entry is updated so cache needs to be reset
-            Cache::delete('posts');
+            Cache::clear();
 
             return response()->json([
                 'message' => 'Post updated successfully.',

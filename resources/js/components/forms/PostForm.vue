@@ -44,8 +44,8 @@ export default {
 
             const userStore = useUserStore(),
                 userId = userStore.loggedInUser.id,
-                axiosMethod = (me.formData != null) ? 'put' : 'post',
-                requestUrl =  (me.formData != null)
+                axiosMethod = (me.formData.id != null) ? 'put' : 'post',
+                requestUrl =  (me.formData.id != null)
                     ? '/posts/update/' + userId + '/' + me.formData.id
                     : '/posts/create';
 

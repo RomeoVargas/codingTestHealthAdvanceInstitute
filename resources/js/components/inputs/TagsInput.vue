@@ -8,7 +8,6 @@
                 v-model="newTag"
                 @keydown.enter="addTag"
                 @keydown.delete="removeLastTag"
-                @input="searchTags"
                 v-on:keydown.enter.prevent='addTag'
                 placeholder="Add a tag..."
                 list="tag-suggestions"
@@ -16,9 +15,9 @@
         </div>
 
         <!-- Autocomplete suggestions -->
-        <datalist id="tag-suggestions">
-            <option v-for="suggestion in filteredTags" :key="suggestion" :value="suggestion"></option>
-        </datalist>
+<!--        <datalist id="tag-suggestions">-->
+<!--            <option v-for="suggestion in filteredTags" :key="suggestion" :value="suggestion"></option>-->
+<!--        </datalist>-->
 
         <!-- Display added tags -->
         <div class="tags-list">
@@ -73,21 +72,21 @@ export default {
             }
         },
 
-        // Search and filter tags based on user input
-        async searchTags() {
-            if (this.newTag.trim()) {
-                try {
-                    const response = await axios.get('/tags', {
-                        params: { search: this.newTag }
-                    });
-                    this.filteredTags = response.data.tags;
-                } catch (error) {
-                    console.error('Error fetching tags:', error);
-                }
-            } else {
-                this.filteredTags = [];
-            }
-        },
+        // // Search and filter tags based on user input
+        // async searchTags() {
+        //     if (this.newTag.trim()) {
+        //         try {
+        //             const response = await axios.get('/tags', {
+        //                 params: { search: this.newTag }
+        //             });
+        //             this.filteredTags = response.data.tags;
+        //         } catch (error) {
+        //             console.error('Error fetching tags:', error);
+        //         }
+        //     } else {
+        //         this.filteredTags = [];
+        //     }
+        // },
     }
 };
 </script>
